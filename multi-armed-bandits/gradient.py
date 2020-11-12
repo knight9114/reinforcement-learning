@@ -1,87 +1,86 @@
 # Imports
+from typing import Tuple, Optional
 import numpy as np
 from matplotlib import pyplot as plt
 import tqdm
+import numba
 
 # Main
 def main():
-    # Prepare
-    k = 10
-    mu = 0
-    var = 1
-    n_steps = 1000
-    n_runs = 2000
-    constants = [.5, 1, 2]
-    mean_rewards = np.zeros([len(constants), n_steps])
-    mean_opt_action = np.zeros([len(constants), n_steps])
+    pass
 
-    # Collect Results
-    for i, eps in enumerate(constants):
-        rewards, optimal = chapter_2_testbed(k, mu, var, eps, n_steps, n_runs)
-        mean_rewards[i] = rewards.mean(0)
-        mean_opt_action[i] = optimal.mean(0)
-
-    # Plot Results
-    x = np.arange(n_steps)
-    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
-    ax1.plot(x, mean_rewards.T)
-    ax1.legend([f'c = {e}' for e in constants])
-    ax1.set_xlabel('Steps')
-    ax1.set_ylabel('Average Reward')
-
-    ax2.plot(x, mean_opt_action.T * 100)
-    ax2.legend([f'c = {e}' for e in constants])
-    ax2.set_xlabel('Steps')
-    ax2.set_ylabel('Average Optimal Action Taken')
-
-    plt.show()
-
-# 10-Armed Testbed
-def chapter_2_testbed(
-        k:int=10,
-        mu:float=0, 
-        var:float=1,
-        constant:float=1.,
+# Bandit Problem
+def multi_arm_bandit_simulator(
+        n_bandits:int=10,
+        alpha:float=0.1,
         n_steps:int=1000,
-        n_runs:int=2000):
-    # Prepare Global Tracking
-    mean_reward = np.zeros([n_runs, n_steps])
-    mean_opt_action = np.zeros([n_runs, n_steps])
+        init_mu:float=0,
+        init_sigma:float=1,
+        sample_sigma:float=1,
+        drift_mu:float=0,
+        drift_sigma:float=0) -> Tuple[np.ndarray, float]:
+    """
+    """
+    # Create Bandits
+    true_mu = np.random.normal(loc=init_mu, scale=init_sigma, size=n_bandits)
+    trace_optimal_moves = np.zeros(n_steps)
+    trace_rewards = np.zeros(n_steps)
 
-    # Perform Independent Runs
-    for run in tqdm.trange(n_runs):
-        # Create K-Armed Bandit Problem
-        mu_bandits = np.random.normal(loc=mu, scale=1, size=k)
-        reward_func = lambda a : np.random.normal(loc=mu_bandits[a], scale=var)
-        opt_action = mu_bandits.argmax()
+    # Prepare Simulator
+    r_bar = 0.
+    h = np.zeros(n_bandits)
 
-        # Prepare Run
-        q = np.full(k, 1 / k)
-        n = np.zeros(k)
+    # Run Simulator
+    for i in range(n_steps):
+        # Select Action
+        pi = softmax(h)
+        action = multinomial(pi)
 
-        # Perform Run
-        for i in range(n_steps):
-            # Get Action
-            a = ucb(q, n, constant, i)
+        # Take Action
+        reward = np.random.normal(loc=true_mu, scale=sample_sigma)
+        r_bar = r_bar + ((reward - r_bar) / (i + 1))
 
-            # Take Action
-            r = reward_func(a)
-            n[a] += 1
+        # Update Preference
+        h = update_preferences(h, pi, action, alpha * (reward - r_bar))
 
-            # Update State
-            q[a] = q[a] + ((r - q[a]) / n[a])
+        # Nonstationary Targets
+        true_mu += np.random.normal(loc=drift_mu, scale=drift_sigma, size=true_mu.shape[0])
 
-            # Bookkeeping
-            mean_reward[run, i] = r
-            mean_opt_action[run, i] = opt_action == a
-
-    return mean_reward, mean_opt_action
+    return h, r_bar
 
 
-def ucb(q:np.ndarray, n:np.ndarray, c:float, t:int) -> int:
-    with np.errstate(divide='ignore'):
-        uncertainty = c * np.sqrt(np.log(t + 2) / n)
-    return (q + uncertainty).argmax()
+# Numba Functions
+@numba.njit()
+def update_preferences(
+        h:np.ndarray,
+        pi:np.ndarray,
+        a:int,
+        alpha_r_delta:float) -> np.ndarray:
+    """
+    """
+    h_next = np.zeros_like(h)
+    for i, (h_i, pi_i) in enumerate(zip(h, pi)):
+        if i == a:
+            h_next[i] = h_i + alpha_r_delta * (1 - pi_i)
+        else:
+            h_next[i] = h_i - alpha_r_delta * pi_i
+    return h_next
+
+
+@numba.njit()
+def softmax(x:np.ndarray) -> np.ndarray:
+    """
+    """
+    exp = np.exp(x)
+    return exp / exp.sum()
+
+
+@numba.njit()
+def multinomial(x:np.ndarray) -> int:
+    """
+    """
+    cdf = x.cumsum()
+    return np.searchsorted(cdf, np.random.rand())
 
 # Script Mode
 if __name__ == '__main__':
