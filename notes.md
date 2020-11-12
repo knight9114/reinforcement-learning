@@ -7,7 +7,7 @@ header-includes: |
 ---
 
 \newcommand{\Qn}{Q_ n}
-\newcommand{\Qn1}{Q_ {n + 1}}
+\newcommand{\Qnpo}{Q_ {n + 1}}
 \newcommand{\Rn}{R_ n}
 \newcommand{\Ri}{R_ i}
 
@@ -52,7 +52,7 @@ experiments. It is possible to incrementally compute the updates via
 
 \begin{equation} 
     \begin{split}
-    \Qn1 & = \frac{1}{n} \sum_ {i=1}^n \Ri \\
+    \Qnpo & = \frac{1}{n} \sum_ {i=1}^n \Ri \\
     & = \frac{1}{n} \left( \Rn + \sum_ {i=1}^{n-1} \Ri \right) \\
     & = \frac{1}{n} \left( \Rn + (n - 1) \frac{1}{n - 1} \sum_ {i=1}^{n-1} \Ri \right)\\
     & = \frac{1}{n} \left( \Rn + (n - 1) \Qn \right) \\
@@ -77,15 +77,15 @@ problems; however, they fail when the reward probabilities shift over time. In
 such cases, it makes sense to weight the more recent rewards more than the
 previous ones. This is a simple change
 
-$$ \Qn1 \doteq \Qn + \alpha \left[ \Rn - \Qn \right] $$
+$$ \Qnpo \doteq \Qn + \alpha \left[ \Rn - \Qn \right] $$
 
 where the step-size parameter $\alpha \in (0, 1]$ is constant. This results in
-$\Qn1$ being a weighted average of the past rewards and the initial estimate
+$\Qnpo$ being a weighted average of the past rewards and the initial estimate
 $Q_ 1$:
 
 \begin{equation}
     \begin{split}
-    \Qn1 & = \Qn + \alpha \left[ \Rn - \Qn \right] \\
+    \Qnpo & = \Qn + \alpha \left[ \Rn - \Qn \right] \\
          & = \alpha \Rn + (1 - \alpha) \Qn \\
          & ... \\
          & = (1 - \alpha)^n Q_ 1 + \sum_ {i=1}^n \alpha(1 - \alpha)^{n-i} \Ri
