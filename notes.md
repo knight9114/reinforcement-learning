@@ -177,3 +177,121 @@ the average of all the rewards up through and including time $t$. The $\bar{R_
 t}$ serves as a \emph{baseline}. When an action's reward is below the baseline,
 the probability of taking that action again is decreased. Rewards above the
 baseline increase the probability of that action being taken again.
+
+\pagebreak
+# Chapter 3 - Finite Markov Decision Processes
+
+## Section 3.1 - Agent-Environment Interface
+
+Markov Decision Processes, MDPs, are a classical formalization of sequential
+decision making, where actions influence not just immediate rewards, but also
+subsequent situations. In the bandit problem, we estimate the value function,
+$q_ * (a)$, for every action $a$. In the MDPs, we estimate the value function,
+$q_ * (s, a)$, for each action, $a$, or equivalently the _state-value
+function_, $v_ * (s)$.
+
+Definitions:
+
+* _agent_: The learner or decision maker
+* _environment_: The thing the agent interacts with
+
+The agent and the environment interact with each other continually - the agent
+selects actions given the environment, and the environment changes with each
+action. More specifically, the agent and environment interact at each of a
+sequence of discrete time steps, $t = 0, 1, 2, ...$. For each time step, the
+agent receives a representation of the environment's current _state_, $S_ t \in
+\mathcal{S}$, and then selections an action, $A_ t \in \mathcal{A}(S_ t)$. On
+the next time step, the agent receives the next state, $S_ {t+1}$, and a
+reward, $R_ {t+1}$. This process results in a _trajectory_ that begins like
+this:
+
+$$ S_ 0, A_ 0, R_ 1, S_ 1, A_ 1, R_ 2, S_ 2, A_ 2, R_ 3 $$
+
+In a _finite_ MDP, the sets of states, actions, and rewards $(\mathcal{S},
+\mathcal{A}, \mathcal{R})$ all have a finite number of elements. For particular
+values of $s' \in \mathcal{S}$ and $r \in \mathcal{R}$, there is a probability
+of those values occurring at time $t$, given particular values of the
+preceding state and action:
+
+$$ p(s', r | s, a) \doteq Pr\{S_ t = s', R_ t = r | S_ {t-1} = s, A_ {t-1}=a\} $$
+
+The function $p$ defines the _dynamics_ of the MDP. The dynamics function
+\linebreak $p: \mathcal{S} \times \mathcal{R} \times \mathcal{S} \times
+\mathcal{A} \rightarrow [0, 1]$ is an ordinary deterministic function of four
+arguments. In a _Markov_ process, the probabilities given by $p$ completely
+characterize the environment's dynamics. Given the dynamics function, it is
+possible to compute anything else one might want to know about the environment:
+
+\pagebreak
+
+_State-Transition Probabilities_
+ 
+$$
+p(s' | s, a) \doteq Pr\{S_ t = s' | S_ {t-1} = s, A_ {t-1}=a\} = \sum_{r \in
+\mathcal{R}} p(s', r | s, a)
+$$
+
+_Expected State-Action Rewards_
+
+$$ 
+r(s, a) \doteq \mathbb{E}\left[ R_ t | S_ {t-1} = s, A_ {t-1}=a\right] =
+\sum_{r \in \mathcal{R}} r \sum_ {s' \in \mathcal{S}} p(s', r | s, a)
+$$
+
+_Expected State-Action-Next-State Rewards_
+
+$$
+r(s, a, s') \doteq \mathbb{E}\left[R_ t | S_ {t-1}=s, A_ {t-1}=a, S_
+t=s'\right] = \sum_ {r \in \mathcal{R}} r \frac{p(s', r | s, a)}{p(s' | s, a)}
+$$
+
+## Section 3.2 - Goals and Rewards
+
+The purpose of reinforcement learning is maximizing the long-term reward, not
+the short-term reward. This can be state formally as the _reward hypothesis_:
+
+> That all of what we mean by goals and purposes can be well thought of as the
+> maximization of the expected value of the cumulative sum of a received scalar
+> signal (called reward).
+
+The reward signal is _not_ the place to impart prior knowledge to the agent.
+Instead, do that via the initial policy or the initial value function. The
+reward signal is your way of communicating to the agent _what_ you want to
+achieve, not _how_ you want it achieved.
+
+## Section 3.3 - Returns and Episodes
+
+In general, the agent seeks to maximize the _expected return_, $G_ t$, is
+defined as some specific function of the reward sequence. The simplest case is
+just:
+
+$$ G_ t \doteq \sum_ {i=t+1}^T R_ i $$
+
+where $T$ is the final time step. This method works well when the environment
+can be naturally broken up into subsequences, called _episodes_ or _trials_.
+Environments such as that are called _episodic tasks_. It is often necessary to
+discern between terminal and non-terminal states. We denote the set of
+non-terminal states as $\mathcal{S}$ and the set of all states, including
+terminal ones, as $\mathcal{S}^+$. Tasks that do not have natural terminal
+states are called _continuous tasks_, which makes computing the return
+formulation difficult since $T = \infty$.
+
+This naive approact to expected return does not take into consideration how far
+away the reward is from the current time step. To handle this, we introduce
+_discounting_. According to this approach, the agent tries to select actions so
+that the sum of the discounted rewards is maximized. In particular, it chooses
+$A_ t$ to maximize the expected _discounted return_:
+
+$$ G_ t \doteq \sum_ {k=0}^\infty \gamma^k R_ {t + k + 1} $$
+
+where $\gamma$ is the _discount rate_ such that $\gamma \in [0, 1]$. It is
+possible to reformulate the expected discounted return using a familiar-looking
+equation:
+
+\begin{equation}
+    \begin{split}
+    G_ t & \doteq R_ {t+1} + \gamma R_ {t+2} + \gamma^2 R_ {t+3} + \cdots \\
+         & = R_ {t+1} + \gamma \left( R_ {t+2} + \gamma R_ {t+3} + \cdots \right) \\
+         & = R_ {t+1} + \gamma G_ {t+1}
+    \end{split}
+\end{equation}
