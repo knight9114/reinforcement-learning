@@ -284,13 +284,13 @@ def plot_rewards_and_optimal(reward, optimal):
 # -------------------------------------------------------------------------
 def main():
     # Define Hyperparameters
-    n_episodes=10
+    n_episodes=2000
     n_steps=1000
     k=10
-    init_loc=0
+    init_loc=5
     init_scale=1
     step_scale=1
-    update_scale=0
+    update_scale=.01
 
     # Run Epsilon Greedy Examples
     fig, axes = plt.subplots(3, 2, sharex=True)
@@ -310,11 +310,62 @@ def main():
                 epsilon=eps)
         results.append(r.mean(0))
         optimal.append(o.mean(0))
-    (axes[0]).plot(np.transpose(results))
-    (axes[0]).legend(epsilons)
-    (axes[1]).plot(np.transpose(optimal))
-    (axes[1]).legend(epsilons)
+    axes[0, 0].plot(np.transpose(results))
+    axes[0, 0].legend(epsilons)
+    axes[0, 0].set_title('$\epsilon$-Greedy Reward')
+    axes[0, 1].plot(np.transpose(optimal))
+    axes[0, 1].legend(epsilons)
+    axes[0, 1].set_title('$\epsilon$-Greedy Optimal')
 
+    # Run Upper Confidence Bounds Examples
+    results, optimal = [], []
+    cs = [0.5, 1.0, 2.0]
+    for c in cs:
+        r, o = run_experiments(
+                n_episodes=n_episodes,
+                experiment=run_upper_confidence_bound,
+                prefix=f'ucs={c:<.2f}',
+                n_steps=n_steps,
+                k=k,
+                init_loc=init_loc,
+                init_scale=init_scale,
+                step_scale=step_scale,
+                update_scale=update_scale,
+                c=c)
+        results.append(r.mean(0))
+        optimal.append(o.mean(0))
+    axes[1, 0].plot(np.transpose(results))
+    axes[1, 0].legend(cs)
+    axes[1, 0].set_title('UCB Reward')
+    axes[1, 1].plot(np.transpose(optimal))
+    axes[1, 1].legend(cs)
+    axes[1, 1].set_title('UCB Optimal')
+
+    # Run Gradient Examples
+    results, optimal = [], []
+    alphas = [0.1, 0.5, 1.0]
+    for alpha in alphas:
+        r, o = run_experiments(
+                n_episodes=n_episodes,
+                experiment=run_gradient,
+                prefix=f'gradient={alpha:<.2f}',
+                n_steps=n_steps,
+                k=k,
+                init_loc=init_loc,
+                init_scale=init_scale,
+                step_scale=step_scale,
+                update_scale=update_scale,
+                alpha=alpha)
+        results.append(r.mean(0))
+        optimal.append(o.mean(0))
+    axes[2, 0].plot(np.transpose(results))
+    axes[2, 0].legend(cs)
+    axes[2, 0].set_title('Gradient Reward')
+    axes[2, 1].plot(np.transpose(optimal))
+    axes[2, 1].legend(cs)
+    axes[2, 1].set_title('Gradient Optimal')
+
+    plt.show()
     
 
 
