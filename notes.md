@@ -295,3 +295,64 @@ equation:
          & = R_ {t+1} + \gamma G_ {t+1}
     \end{split}
 \end{equation}
+
+# Chapter 5 - Monte Carlo Methods
+
+As opposed to other methods, Monte Carlo methods do not require full knowledge
+of an environment's dynamics. Instead, we learn the optimal policy from
+_experience_, ie: samples from the environment. Additionally, instead of
+online-learning, the policy is only updated after an entire episode.
+
+This learning process adapts the idea of _general policy iteration_, GPI. In
+this section, the value functions are learned, as opposed to computed, from
+sample returns from the episode.
+
+## Section 5.1 - Monte Carlo Prediction
+
+An obvious way of estimating the state value function, $v_{\pi}$, is to simply
+average the returns from observed after visits to that state. Over time, the
+average should converge to the true expected value.
+
+Suppose we wish to estimate $v_{\pi}(s)$, the value of state $s$ under policy
+$\pi$ given a set of episodes obtained by following $\pi$ and passing through
+$s$. There are two ways of handling repeated states - only consider the first
+visit, or consider all visits to $s$. The _first-visit MC method_ estimates
+$v_{\pi}$ as the average of the returns following first visits to $s$, whereas
+the _every-visit MC method_ averages the returns following all visits to $s$.
+These two methods are very similar; however, they have different theoretical
+properties. The remainder of this chapter will assume _first-visit MC methods_.
+
+<!-- \begin{centering} -->
+<!--     Input: a policy $\pi$ to be evaluated -->
+<!--     Initialize: -->
+
+<!--     * $V(s) \in \mathbb{R}$, arbitrary, for all $s \in \mathcal{S}$ -->
+<!--     * $Returns(s) \leftarrow $ an empty list, for all $s \in \mathcal{S}$ -->
+
+<!--     Loop forever (for each episode): -->
+
+<!--     1) Generate an episode following $\pi$: $S_0, A_0, R_1, S_1, A_1, R_2, \ldots, S_{T-1}, A_{T-1}, R_T$ -->
+<!--     2) $G \leftarrow 0$ -->
+<!--     3) Loop for each step of episode, $t=T-1, T-2, \ldots, 0$: -->
+<!--        3.1) $G \leftarrow \gamma G + R_{t+1}$ -->
+<!--        3.2) If $S_t \notin S_0, S_1, S_{t-1}$, then Append $G$ to $Returns(S_t)$ and $V(S_t) \leftarrow \text{average}(Returns(S_t))$ -->
+          
+<!-- \end{centering} -->
+
+For example, learning state values for blackjack for a given policy is easy.
+Use the policy and play many games, where each game is an episode. Then average
+the returns for each starting state to approximate the value of each starting
+position.
+
+## Section 5.2 - Monte Carlo Estimation of Action Values
+
+Estimating action-value functions, $q_{\pi}(s, a)$, is very similar to
+estimating state-value functions, with a few extra nuances. Firstly, for a
+given policy, many state-action pairs are never experienced, especially if the
+policy is deterministic. There are two ways around this - either use a
+stochastic policy that ensures that every action for a given state is explored,
+or using _exploring starts_. Exploring starts relies on the fact that every
+start of an episode, state-action pair, is considered. So, for each episode,
+start in a new location and consider that an example for the average.
+
+## Section 5.3 - Monte Carlo Control
